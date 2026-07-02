@@ -1,0 +1,9 @@
+# One-click deploy on Render: https://render.com/docs/infrastructure-as-code
+services:
+  - type: web
+    name: gamecam
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /

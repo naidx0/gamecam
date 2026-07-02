@@ -47,12 +47,13 @@ const btnCloseGamebox = $('btn-close-gamebox');
 const btnCancelInvite = $('btn-cancel-invite');
 const gameTitle = $('game-title');
 const gameTurn = $('game-turn');
+const gameTimer = $('game-timer');
 const btnQuitGame = $('btn-quit-game');
 const gameArea = $('game-area');
-const resultEmoji = $('result-emoji');
 const resultText = $('result-text');
 const btnRematch = $('btn-rematch');
 const btnAnotherGame = $('btn-another-game');
+const btnResultSkip = $('btn-result-skip');
 
 const chatMessages = $('chat-messages');
 const chatForm = $('chat-form');
@@ -60,7 +61,6 @@ const chatInput = $('chat-input');
 const chatSend = $('chat-send');
 
 const modalInvite = $('modal-invite');
-const inviteIcon = $('invite-icon');
 const inviteText = $('invite-text');
 const btnAcceptInvite = $('btn-accept-invite');
 const btnDeclineInvite = $('btn-decline-invite');
@@ -116,11 +116,40 @@ function updateScore() {
   scoreThemName.textContent = partnerName();
 }
 
+// fast turn timer: move within the window or a random legal move is played
+const TURN_SECONDS = 10;
+let turnInterval = null;
+let turnDeadline = 0;
+
+function clearTurnTimer() {
+  clearInterval(turnInterval);
+  turnInterval = null;
+  gameTimer.hidden = true;
+}
+
+function startTurnTimer() {
+  clearTurnTimer();
+  turnDeadline = Date.now() + TURN_SECONDS * 1000;
+  gameTimer.hidden = false;
+  const tick = () => {
+    const left = Math.max(0, Math.ceil((turnDeadline - Date.now()) / 1000));
+    gameTimer.textContent = `${left}s`;
+    gameTimer.classList.toggle('low', left <= 3);
+    if (left <= 0) {
+      clearTurnTimer();
+      activeGame?.instance.randomMove?.();
+    }
+  };
+  tick();
+  turnInterval = setInterval(tick, 250);
+}
+
 function destroyGame() {
   if (activeGame) {
     activeGame.instance.destroy();
     activeGame = null;
   }
+  clearTurnTimer();
   gameArea.textContent = '';
   gameTurn.hidden = true;
 }
@@ -167,14 +196,14 @@ async function requestMedia() {
     return true;
   } catch (err) {
     console.warn(err);
-    showToast('Camera & mic access is required to play 🎥');
+    showToast('Camera and mic access is required to play');
     return false;
   }
 }
 
 // ---- home actions ----------------------------------------------------------
 if (roomFromUrl) {
-  btnStart.textContent = '🎥 Join your friend';
+  btnStart.textContent = 'Join your friend';
   btnFriend.hidden = true;
 }
 
@@ -224,7 +253,7 @@ function enterWaitingRoom() {
   friendMode = true;
   enterChatScreen();
   teardownPairing();
-  stageIdleTitle.textContent = 'Waiting for your friend… ⏳';
+  stageIdleTitle.textContent = 'Waiting for your friend…';
   stageIdleSub.textContent = 'They can only join through your link — resend it if they lost it.';
   btnOpenGamebox.hidden = true;
   idleLink.value = friendLink.value;
@@ -238,31 +267,30 @@ btnMic.addEventListener('click', () => {
   micOn = !micOn;
   rtc.setMicEnabled(micOn);
   btnMic.classList.toggle('off', !micOn);
-  btnMic.textContent = micOn ? '🎙️' : '🔇';
 });
 
 btnCam.addEventListener('click', () => {
   camOn = !camOn;
   rtc.setCamEnabled(camOn);
   btnCam.classList.toggle('off', !camOn);
-  btnCam.textContent = camOn ? '📷' : '🚫';
 });
 
-btnSkip.addEventListener('click', () => {
+function skipToNext() {
   if (paired) socket.send({ t: 'skip' });
   friendMode = false;
   startSearching();
-});
+}
+
+btnSkip.addEventListener('click', skipToNext);
+btnResultSkip.addEventListener('click', skipToNext);
 
 // ---- gamebox ----------------------------------------------------------------
 for (const game of Object.values(GAMES)) {
   const card = document.createElement('button');
   card.className = 'game-card';
   card.innerHTML = `
-    <div class="gc-icon"></div>
     <div class="gc-name"></div>
     <div class="gc-desc"></div>`;
-  card.querySelector('.gc-icon').textContent = game.icon;
   card.querySelector('.gc-name').textContent = game.name;
   card.querySelector('.gc-desc').textContent = game.desc;
   card.addEventListener('click', () => sendInvite(game.id));
@@ -271,7 +299,7 @@ for (const game of Object.values(GAMES)) {
 
 function openGamebox() {
   if (!paired) {
-    showToast('Wait until you\'re connected with someone!');
+    showToast('Wait until you are connected with someone');
     return;
   }
   destroyGame();
@@ -326,7 +354,7 @@ function launchGame(gameId, seed, first) {
   modalInvite.hidden = true;
   incomingInvite = null;
   lastGameId = gameId;
-  gameTitle.textContent = `${game.icon} ${game.name}`;
+  gameTitle.textContent = game.name;
   showStage('game');
 
   const ctx = {
@@ -336,20 +364,24 @@ function launchGame(gameId, seed, first) {
     setTurn: (mine) => {
       if (mine === null) {
         gameTurn.hidden = true;
+        clearTurnTimer();
         return;
       }
       gameTurn.hidden = false;
       gameTurn.textContent = mine ? 'Your turn' : 'Their turn';
       gameTurn.classList.toggle('mine', mine);
+      if (mine) startTurnTimer();
+      else clearTurnTimer();
     },
     finish: (result) => finishGame(result),
   };
   activeGame = { id: gameId, instance: game.create(gameArea, ctx) };
-  addMsg(`${game.name} started — good luck! 🍀`, 'sys');
+  addMsg(`${game.name} started — good luck`, 'sys');
 }
 
 function finishGame(result) {
   gameTurn.hidden = true;
+  clearTurnTimer();
   if (result === 'win') score.me++;
   if (result === 'lose') score.them++;
   updateScore();
@@ -358,16 +390,9 @@ function finishGame(result) {
   setTimeout(() => {
     destroyGame();
     if (!paired) return;
-    if (result === 'win') {
-      resultEmoji.textContent = '🏆';
-      resultText.textContent = 'You won! GG';
-    } else if (result === 'lose') {
-      resultEmoji.textContent = '😵';
-      resultText.textContent = 'You lost… rematch?';
-    } else {
-      resultEmoji.textContent = '🤝';
-      resultText.textContent = "It's a draw!";
-    }
+    if (result === 'win') resultText.textContent = 'You won';
+    else if (result === 'lose') resultText.textContent = 'You lost';
+    else resultText.textContent = 'Draw';
     showStage('result');
   }, 1400);
 }
@@ -399,12 +424,12 @@ socket.onMessage({
     setChatEnabled(true);
     showStage('idle');
     resetIdlePanel();
-    stageIdleTitle.textContent = friendMode ? 'Your friend is here! 🎉' : 'Say hi! 👋';
-    stageIdleSub.textContent = 'Open the gamebox and challenge them to a quick round.';
+    stageIdleTitle.textContent = friendMode ? 'Your friend is here' : 'Say hi';
+    stageIdleSub.textContent = 'Choose a game and challenge them to a quick round.';
     document.querySelector('.remote-tile .video-label').textContent = partnerName();
     remoteOverlayText.textContent = 'Connecting video…';
     setStatus(friendMode ? 'Connected with your friend' : 'Connected with a stranger', true);
-    addMsg(friendMode ? 'Your friend joined — have fun! 🎉' : "You're connected — say hi 👋", 'sys');
+    addMsg(friendMode ? 'Your friend joined — have fun' : 'You are connected — say hi', 'sys');
     await rtc.startPeer(role === 'caller', remoteVideo);
   },
 
@@ -419,7 +444,7 @@ socket.onMessage({
   },
 
   room_error() {
-    showToast('That invite link expired 😕 Ask for a new one!');
+    showToast('That invite link expired — ask for a new one');
     setStatus('Link expired', false);
     remoteOverlayText.textContent = 'Invite link expired — hit Skip to meet strangers instead';
   },
@@ -436,14 +461,13 @@ socket.onMessage({
       return;
     }
     incomingInvite = game;
-    inviteIcon.textContent = g.icon;
-    inviteText.textContent = `${partnerName()} challenges you to ${g.name}!`;
+    inviteText.textContent = `${partnerName()} wants to play ${g.name}`;
     modalInvite.hidden = false;
   },
 
   game_decline() {
     if (!stagePanels.waiting.hidden) {
-      showToast('They passed on that game 😔 Try another?');
+      showToast('They passed on that game');
       showStage('gamebox');
     }
   },
@@ -461,7 +485,7 @@ socket.onMessage({
       destroyGame();
       showStage('idle');
       addMsg(`${partnerName()} quit the game`, 'sys');
-      showToast('They quit the game 🏳️');
+      showToast('They quit the game');
     }
   },
 
@@ -471,7 +495,7 @@ socket.onMessage({
     teardownPairing();
     if (wasFriend) {
       setStatus('They left', false);
-      remoteOverlayText.textContent = 'They left 💔 Hit Skip to meet strangers';
+      remoteOverlayText.textContent = 'They left — hit Skip to meet strangers';
     } else {
       // straight back into the pool — speed is the format
       remoteOverlayText.textContent = 'They skipped — finding someone new…';

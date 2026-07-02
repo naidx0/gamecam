@@ -71,6 +71,15 @@ export function create(container, ctx) {
       if (over || myTurn || !Number.isInteger(i) || i < 0 || i > 8 || board[i]) return;
       place(i, 'them');
     },
+    // turn timer expired: play a random legal move
+    randomMove() {
+      if (over || !myTurn) return;
+      const empty = board.flatMap((v, i) => (v ? [] : [i]));
+      if (!empty.length) return;
+      const i = empty[Math.floor(Math.random() * empty.length)];
+      place(i, 'me');
+      ctx.sendMove({ i });
+    },
     destroy() {
       el.remove();
     },

@@ -3,43 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GameCam — video chat strangers, battle in quick games</title>
-  <meta name="description" content="Hop on, no sign-up. Video chat with strangers around the world and compete in quick games: Tic-Tac-Toe, Connect Four, Wordle Race.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+  <title>GameCam — video chat strangers, play quick games</title>
+  <meta name="description" content="No sign-up. Video chat with strangers around the world and compete in quick games: Tic-Tac-Toe, Connect Four, Wordle Race.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2224%22 fill=%22%23111%22/></svg>">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
   <!-- ============ HOME ============ -->
   <div id="screen-home" class="screen">
-    <div class="home-blob blob-a"></div>
-    <div class="home-blob blob-b"></div>
-    <div class="home-card">
-      <div class="logo-big">🎮 Game<span>Cam</span></div>
-      <p class="tagline">Video chat with strangers around the world —<br>and battle them in quick games.</p>
+    <div class="home-card glass">
+      <div class="logo-big">Game<span>Cam</span></div>
+      <p class="tagline">Video chat with strangers.<br>Settle it in quick games.</p>
       <div class="home-games-row">
-        <span class="home-game-chip">❌⭕ Tic-Tac-Toe</span>
-        <span class="home-game-chip">🔴🟡 Connect 4</span>
-        <span class="home-game-chip">🟩 Wordle Race</span>
+        <span class="home-game-chip">Tic-Tac-Toe</span>
+        <span class="home-game-chip">Connect 4</span>
+        <span class="home-game-chip">Wordle Race</span>
       </div>
-      <button id="btn-start" class="btn btn-primary btn-big">🎥 Start matching</button>
-      <button id="btn-friend" class="btn btn-ghost btn-big">🔗 Play with a friend</button>
+      <button id="btn-start" class="btn btn-primary btn-big">Start matching</button>
+      <button id="btn-friend" class="btn btn-ghost btn-big">Play with a friend</button>
       <div id="friend-box" hidden>
-        <p class="friend-hint">Send this link to your friend — you'll be connected the moment they open it:</p>
+        <p class="friend-hint">Send this link to your friend — they can only join through it.</p>
         <div class="friend-link-row">
           <input id="friend-link" type="text" readonly>
           <button id="btn-copy" class="btn btn-primary">Copy</button>
         </div>
-        <p class="friend-waiting"><span class="pulse-dot"></span> Copy the link and hop in — you'll wait for them in the room</p>
+        <p class="friend-waiting"><span class="pulse-dot"></span> Copy the link and you'll wait for them in the room</p>
       </div>
-      <p class="fineprint">No sign-up. Camera &amp; mic required. Be nice ✌️</p>
+      <p class="fineprint">No sign-up. Camera and mic required. Be nice.</p>
     </div>
   </div>
 
   <!-- ============ CHAT / GAME ============ -->
   <div id="screen-chat" class="screen" hidden>
-    <header class="topbar">
-      <div class="logo-small">🎮 Game<span>Cam</span></div>
+    <header class="topbar glass">
+      <div class="logo-small">Game<span>Cam</span></div>
       <div id="status-pill" class="status-pill">
         <span id="status-dot" class="status-dot"></span>
         <span id="status-text">Connecting…</span>
@@ -69,20 +67,19 @@
           <div class="video-label">You</div>
         </div>
         <div class="controls">
-          <button id="btn-mic" class="ctrl-btn" title="Mute / unmute mic">🎙️</button>
-          <button id="btn-cam" class="ctrl-btn" title="Camera on / off">📷</button>
-          <button id="btn-gamebox" class="ctrl-btn ctrl-accent" title="Open the gamebox">🎮</button>
-          <button id="btn-skip" class="ctrl-btn ctrl-skip" title="Next stranger">⏭️ <span id="skip-label">Skip</span></button>
+          <button id="btn-mic" class="ctrl-btn" title="Mute / unmute mic">Mic</button>
+          <button id="btn-cam" class="ctrl-btn" title="Camera on / off">Cam</button>
+          <button id="btn-gamebox" class="ctrl-btn" title="Choose a game">Games</button>
+          <button id="btn-skip" class="ctrl-btn ctrl-skip" title="Next stranger">Skip</button>
         </div>
       </aside>
 
       <!-- stage: gamebox / active game / results -->
-      <section class="stage">
+      <section class="stage glass">
         <div id="stage-idle" class="stage-panel">
-          <div class="stage-idle-emoji">🕹️</div>
-          <h2 id="stage-idle-title">Say hi!</h2>
-          <p id="stage-idle-sub">Open the gamebox and challenge them to a quick round.</p>
-          <button id="btn-open-gamebox" class="btn btn-primary btn-big">🎮 Pick a game</button>
+          <h2 id="stage-idle-title">Say hi</h2>
+          <p id="stage-idle-sub">Then choose a game and challenge them to a quick round.</p>
+          <button id="btn-open-gamebox" class="btn btn-primary btn-big">Choose a game</button>
           <div id="idle-link-row" class="friend-link-row idle-link-row" hidden>
             <input id="idle-link" type="text" readonly>
             <button id="btn-idle-copy" class="btn btn-primary">Copy</button>
@@ -90,10 +87,10 @@
         </div>
 
         <div id="stage-gamebox" class="stage-panel" hidden>
-          <h2 class="stage-title">🎮 Gamebox</h2>
-          <p class="stage-sub">Pick a game — your opponent has to accept before it starts.</p>
+          <h2 class="stage-title">Games</h2>
+          <p class="stage-sub">Pick one — it starts when your opponent accepts.</p>
           <div id="gamebox-grid" class="gamebox-grid"></div>
-          <button id="btn-close-gamebox" class="btn btn-ghost">← Back</button>
+          <button id="btn-close-gamebox" class="btn btn-ghost">Back</button>
         </div>
 
         <div id="stage-waiting" class="stage-panel" hidden>
@@ -105,29 +102,30 @@
         <div id="stage-game" class="stage-panel stage-game" hidden>
           <div class="game-header">
             <h2 id="game-title"></h2>
+            <div id="game-timer" class="game-timer" hidden></div>
             <div id="game-turn" class="game-turn"></div>
-            <button id="btn-quit-game" class="btn btn-tiny btn-ghost">✕ Quit</button>
+            <button id="btn-quit-game" class="btn btn-tiny btn-ghost">Quit</button>
           </div>
           <div id="game-area"></div>
         </div>
 
         <div id="stage-result" class="stage-panel" hidden>
-          <div id="result-emoji" class="result-emoji"></div>
-          <h2 id="result-text"></h2>
+          <h2 id="result-text" class="result-text"></h2>
           <div class="result-actions">
-            <button id="btn-rematch" class="btn btn-primary">🔁 Rematch</button>
-            <button id="btn-another-game" class="btn btn-ghost">🎮 Another game</button>
+            <button id="btn-rematch" class="btn btn-primary">Replay</button>
+            <button id="btn-another-game" class="btn btn-ghost">New game</button>
+            <button id="btn-result-skip" class="btn btn-ghost">Skip</button>
           </div>
         </div>
       </section>
 
       <!-- chat -->
-      <aside class="chat-col">
-        <div class="chat-head">💬 Chat</div>
+      <aside class="chat-col glass">
+        <div class="chat-head">Chat</div>
         <div id="chat-messages" class="chat-messages"></div>
         <form id="chat-form" class="chat-form" autocomplete="off">
           <input id="chat-input" type="text" placeholder="Say something…" maxlength="500" disabled>
-          <button type="submit" class="btn btn-primary btn-send" disabled id="chat-send">➤</button>
+          <button type="submit" class="btn btn-primary btn-send" disabled id="chat-send">Send</button>
         </form>
       </aside>
     </main>
@@ -135,13 +133,12 @@
 
   <!-- ============ INVITE MODAL ============ -->
   <div id="modal-invite" class="modal-backdrop" hidden>
-    <div class="modal">
-      <div id="invite-icon" class="modal-icon"></div>
+    <div class="modal glass">
       <h2 id="invite-text"></h2>
-      <p class="modal-sub">Quick round — winner takes the bragging rights.</p>
+      <p class="modal-sub">Quick round. Winner takes the bragging rights.</p>
       <div class="modal-actions">
-        <button id="btn-accept-invite" class="btn btn-primary btn-big">✅ Let's go</button>
-        <button id="btn-decline-invite" class="btn btn-ghost">Nah</button>
+        <button id="btn-accept-invite" class="btn btn-primary btn-big">Accept</button>
+        <button id="btn-decline-invite" class="btn btn-ghost">Decline</button>
       </div>
     </div>
   </div>

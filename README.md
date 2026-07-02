@@ -18,8 +18,10 @@ friend and hang out.
   - 🔴🟡 **Connect 4** — drop discs, talk trash
   - 🟩🟨 **Wordle Race** — same word, first to crack it wins (you see their progress as colors only)
 - 💬 **Text chat** alongside the call
-- 🏆 **Per-match scoreboard** and instant rematch
-- 🎙️ Mic / 📷 camera toggles
+- ⏱️ **Fast turn timer** — 10 seconds to move in turn-based games or a random
+  legal move is played for you, so rounds never drag
+- 🏆 **Per-match scoreboard**, instant replay / new game / skip from the result screen
+- 🎙️ Mic / camera toggles
 
 ## Run it
 
@@ -41,10 +43,49 @@ the server never stores anything.
 
 Works out of the box on Render, Railway, Fly.io, Heroku or any Node host:
 the server binds `process.env.PORT` and serves everything from one port.
+A `render.yaml` (Render blueprint) and `Dockerfile` are included — on Render,
+"New → Blueprint → point at this repo" is all it takes, then attach your
+domain in the dashboard.
+
+Vercel/Netlify-style serverless platforms won't work as-is: the app needs one
+long-lived process for the WebSocket matchmaker.
 
 For users behind strict NATs you'll eventually want a TURN server (e.g.
 [coturn](https://github.com/coturn/coturn) or a hosted service) added to
 `RTC_CONFIG` in `public/js/rtc.js` — STUN-only covers most, not all, networks.
+
+## Safety & privacy
+
+What's already safe by design:
+
+- **All traffic is encrypted.** Signaling/chat/game moves ride HTTPS+WSS;
+  the video call itself is WebRTC, which is always DTLS-SRTP encrypted.
+  Nobody on the network path can read or watch anything.
+- **Chat and game moves never go peer-to-peer** — they're relayed through the
+  server, so they expose nothing about the other user.
+- **Chat is rendered with `textContent`** (no HTML injection) and length-capped
+  server-side.
+- **Nothing is stored.** No accounts, no logs of conversations, no database.
+
+The one real exposure — same as every WebRTC app (Omegle, Monkey, Zoom P2P):
+**peer-to-peer video means each side's public IP appears in the connection
+metadata** (ICE candidates). A technical user can read their own machine's
+traffic and learn the opponent's IP — not your browsing data, passwords, or
+"network information," just the IP, which roughly geolocates to a city. Modern
+browsers already mask *local* addresses with mDNS.
+
+To close even that before a big public launch, route media through a relay:
+
+1. Run a TURN server (coturn) or use a hosted one (Twilio/Cloudflare/Metered)
+2. Add it to `RTC_CONFIG` in `public/js/rtc.js` with credentials
+3. Set `iceTransportPolicy: 'relay'` in the same config — peers then only ever
+   see the relay's IP, never each other's
+
+The trade-off is the relay's bandwidth bill, which is why "IP-hidden mode" is
+the standard scale-up step rather than the MVP default.
+
+Also worth doing before public launch: a report/block button and basic
+rate limiting on matchmaking.
 
 ## How a match works
 

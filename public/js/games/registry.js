@@ -6,21 +6,18 @@ export const GAMES = {
   ttt: {
     id: 'ttt',
     name: 'Tic-Tac-Toe',
-    icon: '❌⭕',
-    desc: 'The classic. 30-second rounds.',
+    desc: 'The classic. Rounds in under a minute.',
     create: tictactoe.create,
   },
   c4: {
     id: 'c4',
     name: 'Connect 4',
-    icon: '🔴🟡',
-    desc: 'Drop discs, connect four, talk trash.',
+    desc: 'Drop discs, connect four before they do.',
     create: connect4.create,
   },
   wordle: {
     id: 'wordle',
     name: 'Wordle Race',
-    icon: '🟩🟨',
     desc: 'Same word, first to crack it wins.',
     create: wordle.create,
   },

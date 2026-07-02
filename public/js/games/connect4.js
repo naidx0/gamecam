@@ -91,6 +91,15 @@ export function create(container, ctx) {
       if (grid[c].length >= ROWS) return;
       drop(c, 'them');
     },
+    // turn timer expired: drop a disc in a random open column
+    randomMove() {
+      if (over || !myTurn) return;
+      const open = grid.flatMap((col, c) => (col.length < ROWS ? [c] : []));
+      if (!open.length) return;
+      const c = open[Math.floor(Math.random() * open.length)];
+      drop(c, 'me');
+      ctx.sendMove({ c });
+    },
     destroy() {
       wrap.remove();
     },
