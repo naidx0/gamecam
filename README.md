@@ -11,7 +11,8 @@ friend and hang out.
 
 - 🎥 **Instant video + voice chat** — WebRTC, peer-to-peer, no login
 - 🔀 **Random matchmaking** with a **Skip** button (auto-requeues you)
-- 🔗 **Play with a friend** — share a unique invite link, connect instantly
+- 🔗 **Play with a friend** — get a unique invite link; hitting **Copy** drops you
+  straight into your room, where only that link can bring your friend in
 - 🎮 **Gamebox** — challenge your match; they have to accept before it starts:
   - ❌⭕ **Tic-Tac-Toe** — 30-second rounds
   - 🔴🟡 **Connect 4** — drop discs, talk trash
@@ -79,7 +80,7 @@ export function create(container, ctx) {
 
 - More games: chess, 8-ball pool, tanks, quick trivia
 - Round timers to keep the speed format honest
-- Co-op parties / duos matchmaking
+- Co-op parties / duos matchmaking (backlog)
 - Report/block + basic moderation before any public launch
 - TURN server for restrictive networks
 - Ads or cosmetics for revenue (later, maybe)

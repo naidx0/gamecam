@@ -92,6 +92,7 @@ input { font: inherit; }
   border-radius: 12px; padding: 10px 14px; color: var(--text); font-size: .9rem;
 }
 .friend-waiting { color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 8px; justify-content: center; }
+.idle-link-row { width: 100%; max-width: 440px; }
 .pulse-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity: .4; transform: scale(.7);} }
 

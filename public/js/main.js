@@ -39,6 +39,9 @@ const stagePanels = {
 const stageIdleTitle = $('stage-idle-title');
 const stageIdleSub = $('stage-idle-sub');
 const btnOpenGamebox = $('btn-open-gamebox');
+const idleLinkRow = $('idle-link-row');
+const idleLink = $('idle-link');
+const btnIdleCopy = $('btn-idle-copy');
 const gameboxGrid = $('gamebox-grid');
 const btnCloseGamebox = $('btn-close-gamebox');
 const btnCancelInvite = $('btn-cancel-invite');
@@ -136,8 +139,16 @@ function teardownPairing() {
   showStage('idle');
 }
 
+function resetIdlePanel() {
+  btnOpenGamebox.hidden = false;
+  idleLinkRow.hidden = true;
+}
+
 function startSearching() {
   teardownPairing();
+  resetIdlePanel();
+  stageIdleTitle.textContent = 'Finding someone…';
+  stageIdleSub.textContent = 'Hang tight — matches are usually instant.';
   chatMessages.textContent = '';
   remoteOverlayText.textContent = 'Looking for someone…';
   setStatus('Looking for someone…', false);
@@ -187,15 +198,40 @@ btnFriend.addEventListener('click', async () => {
   socket.send({ t: 'create_room' });
 });
 
-btnCopy.addEventListener('click', async () => {
+async function copyLink(input, btn) {
   try {
-    await navigator.clipboard.writeText(friendLink.value);
-    btnCopy.textContent = 'Copied!';
-    setTimeout(() => (btnCopy.textContent = 'Copy'), 1500);
+    await navigator.clipboard.writeText(input.value);
+    btn.textContent = 'Copied!';
+    setTimeout(() => (btn.textContent = 'Copy'), 1500);
   } catch {
-    friendLink.select();
+    input.select();
+    document.execCommand?.('copy');
+    btn.textContent = 'Copied!';
+    setTimeout(() => (btn.textContent = 'Copy'), 1500);
   }
+}
+
+// copying the link is the "I'm ready" gesture: drop the host straight into
+// the room, where only the link can bring their friend in
+btnCopy.addEventListener('click', async () => {
+  await copyLink(friendLink, btnCopy);
+  setTimeout(enterWaitingRoom, 400);
 });
+
+btnIdleCopy.addEventListener('click', () => copyLink(idleLink, btnIdleCopy));
+
+function enterWaitingRoom() {
+  friendMode = true;
+  enterChatScreen();
+  teardownPairing();
+  stageIdleTitle.textContent = 'Waiting for your friend… ⏳';
+  stageIdleSub.textContent = 'They can only join through your link — resend it if they lost it.';
+  btnOpenGamebox.hidden = true;
+  idleLink.value = friendLink.value;
+  idleLinkRow.hidden = false;
+  remoteOverlayText.textContent = 'Waiting for your friend to join…';
+  setStatus('Waiting for your friend…', false);
+}
 
 // ---- controls ----------------------------------------------------------------
 btnMic.addEventListener('click', () => {
@@ -362,6 +398,7 @@ socket.onMessage({
     chatMessages.textContent = '';
     setChatEnabled(true);
     showStage('idle');
+    resetIdlePanel();
     stageIdleTitle.textContent = friendMode ? 'Your friend is here! 🎉' : 'Say hi! 👋';
     stageIdleSub.textContent = 'Open the gamebox and challenge them to a quick round.';
     document.querySelector('.remote-tile .video-label').textContent = partnerName();
