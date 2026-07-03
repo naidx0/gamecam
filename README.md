@@ -14,11 +14,13 @@ friend and hang out.
 - 🔗 **Play with a friend** — get a unique invite link; hitting **Copy** drops you
   straight into your room, where only that link can bring your friend in
 - 🎮 **Gamebox** — challenge your match; they have to accept before it starts:
-  - ❌⭕ **Tic-Tac-Toe** — 30-second rounds
-  - 🔴🟡 **Connect 4** — drop discs, talk trash
-  - 🟩🟨 **Wordle Race** — same word, first to crack it wins (you see their progress as colors only)
+  - **8-Ball Pool** — top-down table, drag from the cue ball to aim, sink your
+    group then the 8. Built from scratch (our own physics and art — the pool
+    *mechanic* isn't copyrightable, only Miniclip's specific game is)
+  - **Connect 4** — drop discs, talk trash
+  - **Wordle Race** — same word, first to crack it wins (you see their progress as colors only)
 - 💬 **Text chat** alongside the call
-- ⏱️ **Fast turn timer** — 10 seconds to move in turn-based games or a random
+- ⏱️ **Fast turn timer** — 10 seconds to move (15 for a pool shot) or a random
   legal move is played for you, so rounds never drag
 - 🏆 **Per-match scoreboard**, instant replay / new game / skip from the result screen
 - 🎙️ Mic / camera toggles
@@ -119,7 +121,7 @@ export function create(container, ctx) {
 
 ## Roadmap ideas
 
-- More games: chess, 8-ball pool, tanks, quick trivia
+- More games: chess (MIT-licensed chess.js + our own board), tanks, quick trivia
 - Round timers to keep the speed format honest
 - Co-op parties / duos matchmaking (backlog)
 - Report/block + basic moderation before any public launch

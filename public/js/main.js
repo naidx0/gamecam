@@ -127,9 +127,9 @@ function clearTurnTimer() {
   gameTimer.hidden = true;
 }
 
-function startTurnTimer() {
+function startTurnTimer(seconds = TURN_SECONDS) {
   clearTurnTimer();
-  turnDeadline = Date.now() + TURN_SECONDS * 1000;
+  turnDeadline = Date.now() + seconds * 1000;
   gameTimer.hidden = false;
   const tick = () => {
     const left = Math.max(0, Math.ceil((turnDeadline - Date.now()) / 1000));
@@ -370,7 +370,7 @@ function launchGame(gameId, seed, first) {
       gameTurn.hidden = false;
       gameTurn.textContent = mine ? 'Your turn' : 'Their turn';
       gameTurn.classList.toggle('mine', mine);
-      if (mine) startTurnTimer();
+      if (mine) startTurnTimer(game.turnSeconds ?? TURN_SECONDS);
       else clearTurnTimer();
     },
     finish: (result) => finishGame(result),

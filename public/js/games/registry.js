@@ -1,13 +1,14 @@
-import * as tictactoe from './tictactoe.js';
+import * as pool from './pool.js';
 import * as connect4 from './connect4.js';
 import * as wordle from './wordle.js';
 
 export const GAMES = {
-  ttt: {
-    id: 'ttt',
-    name: 'Tic-Tac-Toe',
-    desc: 'The classic. Rounds in under a minute.',
-    create: tictactoe.create,
+  pool: {
+    id: 'pool',
+    name: '8-Ball Pool',
+    desc: 'Drag to aim, sink your group, then the 8.',
+    turnSeconds: 15,
+    create: pool.create,
   },
   c4: {
     id: 'c4',
