@@ -147,10 +147,14 @@ try {
   await B.waitForSelector('.wordle-board');
 
   // =====================================================================
-  // Scenario 2 (H1's exact trigger): the non-first player busts all 6
-  // guesses (with >=1 green) right before expiry. The old code let the
-  // out-handler finish 'draw' via maybeDraw(); it must now resolve by
-  // greens -> the buster wins, the other loses, neither shows 'Draw'.
+  // Scenario 2: the non-first player busts all 6 guesses (with >=1 green)
+  // before expiry while the first player never guesses. Busting must not
+  // finish the game locally; resolution happens via the clock-expiry
+  // greens verdict -> the buster wins, the other loses, neither shows
+  // 'Draw', and both pages reach a result (no hang). Note: the both-
+  // players-bust-early path (checkBothOut -> beginResolution) is not
+  // driven here — it shares the same resolution machinery but a
+  // dedicated case is a known follow-up.
   // =====================================================================
   const aFirst = await A.evaluate(() => window.__wordleTest.first);
   const first = aFirst ? A : B;      // authoritative player, guesses nothing

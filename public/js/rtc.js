@@ -192,11 +192,3 @@ export function closePeer() {
   pendingCandidates = [];
   restartedIce = false;
 }
-
-export function setMicEnabled(on) {
-  localStream?.getAudioTracks().forEach((t) => (t.enabled = on));
-}
-
-export function setCamEnabled(on) {
-  localStream?.getVideoTracks().forEach((t) => (t.enabled = on));
-}

@@ -69,3 +69,14 @@ node test/e2e.js   # full suite, exit 0
 ### Final gate
 Adversarial Opus review loop (report-only rounds → fix pass → re-gate) until
 zero findings, then commit to `main` (author naidx0, no AI trailers) and push.
+
+## Outcome (completed)
+
+Shipped across commits 2905338..HEAD. Adversarial review: round 1 found 7
+findings (1 high, 4 medium, 2 low), all fixed; round 2 verdict RELEASABLE
+with all fixes holding under attack. Final gate: `npm test` runs all three
+e2e suites (main, hangman, wordle-clock) — green.
+
+Known follow-up: add a both-players-bust-early wordle-clock test case
+(the checkBothOut -> beginResolution path is trace-verified but not driven
+by a test).
