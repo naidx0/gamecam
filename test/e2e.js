@@ -225,10 +225,11 @@ try {
   const box = await (await shooter.$('.pool-canvas')).boundingBox();
   const cueX = box.x + box.width * 0.26;
   const cueY = box.y + box.height / 2;
-  // drag from near the cue toward the rack and release -> fires a shot
+  // slingshot aiming: press anywhere, drag a vector (direction + power), release.
+  // Drag ~0.15*width to the right => aims the cue toward the rack with solid power.
   await shooter.mouse.move(cueX + box.width * 0.2, cueY);
   await shooter.mouse.down();
-  await shooter.mouse.move(cueX + box.width * 0.24, cueY + 4, { steps: 4 });
+  await shooter.mouse.move(cueX + box.width * 0.35, cueY, { steps: 6 });
   await shooter.mouse.up();
   // balls animate on BOTH pages, then shooter syncs and someone gets the turn back
   await shooter.waitForFunction(() => document.getElementById('game-turn').textContent.length > 0 && !document.getElementById('game-turn').hidden, null, { timeout: 25000 });

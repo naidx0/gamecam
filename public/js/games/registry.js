@@ -1,6 +1,7 @@
 import * as pool from './pool.js';
 import * as connect4 from './connect4.js';
 import * as wordle from './wordle.js';
+import * as hangman from './hangman.js';
 
 export const GAMES = {
   pool: {
@@ -21,5 +22,11 @@ export const GAMES = {
     name: 'Wordle Race',
     desc: 'Same word, first to crack it wins.',
     create: wordle.create,
+  },
+  hangman: {
+    id: 'hangman',
+    name: 'Hangman',
+    desc: 'Team up — beat the stickman together.',
+    create: hangman.create,
   },
 };

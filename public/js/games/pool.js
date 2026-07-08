@@ -90,9 +90,13 @@ export function create(container, ctx) {
   wrap.appendChild(status);
   container.appendChild(wrap);
 
-  // ---- aiming ---------------------------------------------------------------
+  // ---- aiming (mobile-friendly slingshot: drag ANYWHERE on the table) --------
+  // The finger never needs to touch the cue ball or the shot line. The gesture
+  // vector (pointerdown anchor -> current pointer) sets both direction and power.
   let aiming = false;
-  let aimX = 0;
+  let startX = 0; // pointerdown anchor (logical)
+  let startY = 0;
+  let aimX = 0; // current pointer (logical)
   let aimY = 0;
 
   function toLogical(e) {
@@ -103,7 +107,9 @@ export function create(container, ctx) {
   function onDown(e) {
     if (!myTurn || phase !== 'aim' || over) return;
     aiming = true;
-    ({ x: aimX, y: aimY } = toLogical(e));
+    ({ x: startX, y: startY } = toLogical(e));
+    aimX = startX;
+    aimY = startY;
     canvas.setPointerCapture?.(e.pointerId);
   }
   function onMove(e) {
@@ -112,9 +118,8 @@ export function create(container, ctx) {
   function onUp() {
     if (!aiming) return;
     aiming = false;
-    const cue = ball(0);
-    const dx = aimX - cue.x;
-    const dy = aimY - cue.y;
+    const dx = aimX - startX;
+    const dy = aimY - startY;
     const dist = Math.hypot(dx, dy);
     if (dist < 18) return; // too small to be a deliberate shot
     const power = Math.min(dist / MAX_DRAG, 1);
@@ -306,6 +311,7 @@ export function create(container, ctx) {
     }
     myTurn = turnIsMine;
     ctx.setTurn(myTurn);
+    updateBanner();
     setStatus();
   }
 
@@ -314,11 +320,24 @@ export function create(container, ctx) {
       status.textContent = text;
       return;
     }
-    const group = myGroup ? (myGroup === 'solid' ? 'solids' : 'stripes') : null;
-    const info = groupsAssigned && group
-      ? `You: ${group} — ${remaining(myGroup)} left`
-      : 'Table open — pot any ball to claim a group';
-    status.textContent = myTurn ? `${info}. Drag from the cue ball to shoot.` : `${info}. Their shot…`;
+    if (!myTurn) {
+      status.textContent = 'Their shot…';
+      return;
+    }
+    const info = groupsAssigned && myGroup ? `${remaining(myGroup)} left` : 'Table open';
+    status.textContent = `${info} — drag anywhere to aim`;
+  }
+
+  // Team banner in the game header (main.js renders ctx.setBanner). The dot
+  // colour mirrors the group's ball look: solids gold, stripes white.
+  function updateBanner() {
+    if (!ctx.setBanner) return;
+    if (groupsAssigned && myGroup) {
+      ctx.setBanner(myGroup === 'solid' ? 'YOU ARE SOLIDS' : 'YOU ARE STRIPES',
+        myGroup === 'solid' ? '#d4b13f' : '#f5f5f7');
+    } else {
+      ctx.setBanner('TABLE OPEN');
+    }
   }
 
   // ---- drawing -------------------------------------------------------------------
@@ -345,22 +364,35 @@ export function create(container, ctx) {
       g.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       g.fill();
     }
-    // aim guide
+    // aim guide — dashed shot line from the CUE ball along the drag direction,
+    // plus a slingshot "pull-back" power bar behind the cue.
     const cue = ball(0);
     if (aiming && cue.alive) {
-      const dx = aimX - cue.x;
-      const dy = aimY - cue.y;
+      const dx = aimX - startX;
+      const dy = aimY - startY;
       const d = Math.hypot(dx, dy);
       if (d > 4) {
-        const len = 70 + Math.min(d / MAX_DRAG, 1) * 220;
-        g.strokeStyle = 'rgba(255,255,255,0.65)';
-        g.lineWidth = 2;
-        g.setLineDash([7, 7]);
+        const power = Math.min(d / MAX_DRAG, 1);
+        const nx = dx / d;
+        const ny = dy / d;
+        const len = 60 + power * 260; // up to ~320px at full power
+        g.strokeStyle = `rgba(255,255,255,${(0.4 + power * 0.5).toFixed(3)})`;
+        g.lineWidth = 2 + power * 1.5;
+        g.setLineDash([8, 8]);
         g.beginPath();
         g.moveTo(cue.x, cue.y);
-        g.lineTo(cue.x + (dx / d) * len, cue.y + (dy / d) * len);
+        g.lineTo(cue.x + nx * len, cue.y + ny * len);
         g.stroke();
         g.setLineDash([]);
+        // power bar: a short thick segment pulled back opposite the aim
+        g.strokeStyle = power > 0.66 ? '#f5b642' : 'rgba(255,255,255,0.85)';
+        g.lineWidth = 6;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(cue.x, cue.y);
+        g.lineTo(cue.x - nx * (power * 58), cue.y - ny * (power * 58));
+        g.stroke();
+        g.lineCap = 'butt';
         g.lineWidth = 1;
       }
     }
@@ -429,6 +461,7 @@ export function create(container, ctx) {
   raf = requestAnimationFrame(loop);
 
   ctx.setTurn(myTurn);
+  updateBanner();
   setStatus();
 
   return {

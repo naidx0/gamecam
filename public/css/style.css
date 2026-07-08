@@ -232,25 +232,33 @@ input { font: inherit; }
 .pool-canvas {
   width: 100%; max-width: 760px; border-radius: 18px;
   border: 1px solid var(--line);
-  touch-action: none; display: block;
+  touch-action: none; display: block; cursor: crosshair;
 }
 .pool-status { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; min-height: 1.2em; }
 
 /* ---- connect four ---- */
 .c4-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .c4-board {
-  display: grid; grid-template-columns: repeat(7, minmax(32px, 52px)); gap: 6px;
-  background: var(--glass-heavy); border: 1px solid var(--line);
-  padding: 12px; border-radius: 22px;
+  display: grid; grid-template-columns: repeat(7, minmax(32px, 52px)); gap: 8px;
+  background: #14141a; border: 4px solid #2c2c38;
+  padding: 16px; border-radius: 26px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5), 0 8px 26px rgba(0, 0, 0, 0.45);
 }
 .c4-cell {
-  aspect-ratio: 1; border-radius: 50%; background: var(--fill);
-  border: 1px solid var(--line); transition: background 0.15s ease;
+  aspect-ratio: 1; border-radius: 50%; background: #0c0c11;
+  border: 1px solid var(--line);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
-.c4-cell.playable:hover { cursor: pointer; background: var(--fill-hover); }
-.c4-cell.mine { background: var(--me); border-color: var(--me); }
-.c4-cell.theirs { background: var(--them); border-color: var(--them); }
-.c4-cell.win { box-shadow: 0 0 0 2px var(--good); }
+.c4-cell.playable:hover { cursor: pointer; background: #1a1a22; }
+/* Disc colour comes from red/blue so both players see the same board. */
+.c4-cell.red { background: #c0453a; border-color: #d1584d; box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35); }
+.c4-cell.blue { background: #3f6fb5; border-color: #5484c8; box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35); }
+/* Translucent hover drop preview in the landing cell (desktop only). */
+.c4-cell.ghost { border-style: dashed; }
+.c4-cell.ghost.red { background: rgba(192, 69, 58, 0.35); border-color: rgba(209, 88, 77, 0.6); }
+.c4-cell.ghost.blue { background: rgba(63, 111, 181, 0.35); border-color: rgba(84, 132, 200, 0.6); }
+.c4-cell.win { box-shadow: 0 0 0 3px var(--good); }
 
 /* ---- wordle ---- */
 .wordle-wrap { display: flex; gap: 30px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
@@ -334,6 +342,33 @@ input { font: inherit; }
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   animation: pop 0.16s ease;
 }
+
+/* ---- hangman ---- */
+.hm-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.hm-cat { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; color: var(--text-dim); }
+.hm-svg { width: 180px; height: 200px; }
+.hm-frame { stroke: var(--text-dim); stroke-width: 4; stroke-linecap: round; }
+.hm-part { stroke: var(--text); stroke-width: 4; stroke-linecap: round; fill: none; }
+.hm-count { font-size: 0.95rem; font-weight: 800; color: var(--bad); letter-spacing: 0.04em; }
+.hm-word { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.hm-blank {
+  width: 30px; height: 42px; border-bottom: 3px solid var(--line-strong);
+  display: flex; align-items: flex-end; justify-content: center;
+  font-weight: 800; font-size: 1.5rem; text-transform: uppercase; line-height: 1;
+}
+.hm-blank.filled { border-bottom-color: var(--good); }
+.hm-status { font-size: 0.82rem; color: var(--text-dim); font-weight: 600; min-height: 1.2em; text-align: center; }
+.hm-kb { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.hm-kb-row { display: flex; gap: 4px; }
+.hm-key {
+  min-width: 30px; padding: 10px 6px; border-radius: 8px;
+  background: var(--fill); border: 1px solid var(--line);
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+}
+.hm-key:hover:not(:disabled) { background: var(--fill-hover); }
+.hm-key:disabled { cursor: default; }
+.hm-key.good { background: #3d6a3a; border-color: #3d6a3a; color: #fff; }
+.hm-key.bad { background: #1c1c1f; border-color: #1c1c1f; color: #5a5a60; }
 
 /* ============ responsive ============ */
 @media (max-width: 1020px) {
