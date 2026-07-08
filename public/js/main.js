@@ -297,11 +297,13 @@ btnResultSkip.addEventListener('click', skipToNext);
 rtc.setConnectionFailedHandler(() => {
   if (!paired) return;
   if (friendMode) {
-    rtc.closePeer();
-    remoteVideo.srcObject = null;
+    // The room code is already consumed server-side, so a refresh just hits
+    // room_error. Tear the pairing down and point them at a fresh link (or
+    // strangers) instead of giving refresh advice that can't work.
+    teardownPairing();
     remoteOverlay.hidden = false;
-    remoteOverlayText.textContent = "Video couldn't connect. Both of you: refresh and try the link again.";
-    setStatus("Video couldn't connect", false);
+    remoteOverlayText.textContent = "Video couldn't connect. Ask your friend for a fresh link, or hit Skip to meet strangers.";
+    setStatus('Video failed', false);
   } else {
     showToast("Video couldn't connect — finding someone new");
     skipToNext();

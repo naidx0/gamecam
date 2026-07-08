@@ -6,7 +6,14 @@ import { WORDS } from './words.js';
 import { DICTIONARY } from './dictionary.js';
 
 const KB_ROWS = ['qwertyuiop', 'asdfghjkl', '⏎zxcvbnm⌫'];
-const GAME_MS = 60000;
+// Overridable via window hooks so the clock scenarios can run on a fast clock
+// in e2e (see test/e2e-wordle-clock.js). Production uses the defaults.
+const GAME_MS = (typeof window !== 'undefined' && window.__WORDLE_GAME_MS) || 60000;
+// Grace before the first player broadcasts its authoritative verdict, so any
+// in-flight winning move lands first. Fallback: how long the second player
+// waits for a verdict before resolving locally (covers a frozen first tab).
+const GRACE_MS = (typeof window !== 'undefined' && window.__WORDLE_GRACE_MS) || 1500;
+const FALLBACK_MS = (typeof window !== 'undefined' && window.__WORDLE_FALLBACK_MS) || 5000;
 
 export function create(container, ctx) {
   const word = WORDS[ctx.seed % WORDS.length];
@@ -18,6 +25,8 @@ export function create(container, ctx) {
   let timeExpired = false;
   let myBestGreens = 0;   // most green tiles I've had in any single row
   let theirBestGreens = 0; // same, for the opponent (from received colors)
+  let verdictTimer = null;  // first player: pending authoritative broadcast
+  let fallbackTimer = null; // second player: local resolve if no verdict arrives
 
   ctx.setTurn(null); // no turns — it's a race
 
@@ -45,29 +54,76 @@ export function create(container, ctx) {
   }
   tick(); // paint 1:00 immediately
 
-  // Clock hit 0:00 on this client: lock input, then resolve by greens.
+  // Clock hit 0:00 on this client: lock input, then kick off resolution.
   function onTimeUp() {
     if (over || timeExpired) return;
     timeExpired = true;
     iAmOut = true; // lock further input
     if (!over) status.textContent = "Time's up!";
-    // The first player is authoritative: after a short grace to let any
-    // in-flight moves land, it broadcasts both green counts and both clients
-    // finish consistently. The second player just waits for that message.
-    if (ctx.first) setTimeout(resolveAsFirst, 600);
+    beginResolution();
   }
+
+  // Unified end-of-game resolution. The instant-solve path (a correct guess
+  // before your own clock expires) stays separate; EVERYTHING else — running
+  // out the clock, or both players busting their 6 guesses — resolves here via
+  // the greens tiebreak. Nobody ever finishes locally from being "out".
+  //
+  // Resolution begins for a client once EITHER its own clock has expired OR
+  // both players are out of guesses. The FIRST player is authoritative: after
+  // a grace (so any in-flight winning move lands), it broadcasts both green
+  // counts and both clients finish consistently. The SECOND player normally
+  // just waits for that verdict, but has a local fallback in case the first
+  // tab is frozen/backgrounded and never sends one.
+  function beginResolution() {
+    if (over) return;
+    if (ctx.first) {
+      if (verdictTimer) return;
+      verdictTimer = setTimeout(resolveAsFirst, GRACE_MS);
+    } else {
+      if (fallbackTimer) return;
+      fallbackTimer = setTimeout(() => {
+        // No verdict (or winning move) arrived in time — resolve locally from
+        // our own view. A frozen first tab can leave a small residual
+        // divergence in the exact green counts; that's accepted here.
+        finishByGreens(myBestGreens, theirBestGreens);
+      }, FALLBACK_MS);
+    }
+  }
+
+  // Both players are out of guesses: resolve now (no need to wait for 0:00).
+  function checkBothOut() {
+    if (iAmOut && theyAreOut && !over) beginResolution();
+  }
+
+  function clearResolveTimers() {
+    if (verdictTimer) { clearTimeout(verdictTimer); verdictTimer = null; }
+    if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+  }
+
   function resolveAsFirst() {
+    verdictTimer = null;
     if (over) return;
     ctx.sendMove({ timeUp: { mine: myBestGreens, theirs: theirBestGreens } });
     finishByGreens(myBestGreens, theirBestGreens);
   }
+
   function finishByGreens(mine, theirs) {
     if (over) return;
     over = true;
+    clearResolveTimers();
     stopClock();
     if (mine > theirs) ctx.finish('win');
     else if (mine < theirs) ctx.finish('lose');
     else ctx.finish('draw');
+  }
+
+  // Single-shot finish for the instant win/lose paths.
+  function finishNow(result) {
+    if (over) return;
+    over = true;
+    clearResolveTimers();
+    stopClock();
+    ctx.finish(result);
   }
 
   // --- my side -------------------------------------------------------------
@@ -181,6 +237,32 @@ export function create(container, ctx) {
     return colors;
   }
 
+  // Test-only helpers (present only when the fast-clock override is set). They
+  // run in-page where DICTIONARY, score() and the answer are all in scope, so
+  // the e2e can craft valid guesses without shipping the answer to production.
+  if (typeof window !== 'undefined' && window.__WORDLE_GAME_MS) {
+    window.__wordleTest = {
+      first: ctx.first,
+      // a valid dictionary word with 1..4 greens vs the answer (never a win)
+      greenGuess() {
+        for (const w of DICTIONARY) {
+          const g = score(w).filter((c) => c === 'g').length;
+          if (g >= 1 && g <= 4) return w;
+        }
+        return null;
+      },
+      // six valid dictionary words, none of them the answer (guaranteed busts)
+      bustGuesses() {
+        const out = [];
+        for (const w of DICTIONARY) {
+          if (w !== word) out.push(w);
+          if (out.length >= 6) break;
+        }
+        return out;
+      },
+    };
+  }
+
   function submit() {
     if (current.length !== 5) {
       flashStatus('Need 5 letters!');
@@ -212,14 +294,16 @@ export function create(container, ctx) {
     ctx.sendMove({ row, colors, won, out: !won && row >= 6 });
 
     if (won) {
-      over = true;
-      ctx.finish('win');
+      // Instant solve before my own clock expired: I win locally now.
+      finishNow('win');
       return;
     }
     if (row >= 6) {
+      // Busted. Lock input and wait for the clock / verdict — never finish
+      // locally from being out. If they're already out too, resolve now.
       iAmOut = true;
-      status.textContent = `Out of guesses! The word was "${word.toUpperCase()}".`;
-      maybeDraw();
+      status.textContent = 'Out of guesses — waiting for the clock…';
+      checkBothOut();
       return;
     }
     status.textContent = `${row} / 6 guesses used`;
@@ -231,15 +315,6 @@ export function create(container, ctx) {
     setTimeout(() => {
       if (status.textContent === text) status.textContent = prev;
     }, 1200);
-  }
-
-  function maybeDraw() {
-    if (iAmOut && theyAreOut && !over) {
-      over = true;
-      ctx.finish('draw');
-    } else if (iAmOut && !over) {
-      status.textContent += ' Waiting to see if they crack it…';
-    }
   }
 
   return {
@@ -264,18 +339,20 @@ export function create(container, ctx) {
         theirStatus.textContent = `${r + 1} / 6 guesses`;
       }
       if (data.won) {
-        over = true;
+        // Their instant solve. Honour it even if it crosses the time-up
+        // boundary: cancel any pending verdict and finish 'lose' normally.
         status.textContent = `They got it first! The word was "${word.toUpperCase()}".`;
-        ctx.finish('lose');
+        finishNow('lose');
         return;
       }
       if (data.out) {
         theyAreOut = true;
         theirStatus.textContent = 'Out of guesses!';
-        maybeDraw();
+        checkBothOut();
       }
     },
     destroy() {
+      clearResolveTimers();
       stopClock();
       document.removeEventListener('keydown', onKeydown);
       wrap.remove();

@@ -116,7 +116,10 @@ export function create(container, ctx) {
     if (aiming) ({ x: aimX, y: aimY } = toLogical(e));
   }
   function onUp() {
-    if (!aiming) return;
+    // Only a live aim on our own turn can shoot. If the turn timer already
+    // fired randomMove() mid-drag, phase is 'anim' (or over) — bail so the
+    // release can't launch a SECOND shot mid-animation.
+    if (!aiming || !myTurn || phase !== 'aim' || over) { aiming = false; return; }
     aiming = false;
     const dx = aimX - startX;
     const dy = aimY - startY;
@@ -136,6 +139,7 @@ export function create(container, ctx) {
     const speed = 300 + power * (MAX_SPEED - 300);
     cue.vx = nx * speed;
     cue.vy = ny * speed;
+    aiming = false; // a shot is committed; kill any in-progress aim/drag
     phase = 'anim';
     iAmShooter = mine;
     pottedThisShot = [];
@@ -468,6 +472,9 @@ export function create(container, ctx) {
     onMove(data) {
       if (over) return;
       if (data.shot && Array.isArray(data.shot)) {
+        // Defense in depth: ignore a relayed shot unless we're between shots.
+        // A shot arriving mid-animation would corrupt the shared physics.
+        if (phase !== 'aim') return;
         const [nx, ny, power] = data.shot.map(Number);
         if ([nx, ny, power].some(Number.isNaN)) return;
         fire(nx, ny, Math.min(Math.max(power, 0), 1), false);

@@ -79,6 +79,10 @@ export async function startPeer(isCaller, remoteVideo) {
 
   // caller re-offers whenever renegotiation is needed (e.g. after restartIce)
   pc.onnegotiationneeded = async () => {
+    // addTrack queues a negotiationneeded task that can fire after our manual
+    // initial offer; guard against emitting a second offer while one is already
+    // in flight ('have-local-offer'). Only renegotiate from a stable state.
+    if (pc.signalingState !== 'stable') return;
     if (!isCallerPeer || !pc) return;
     try {
       const offer = await pc.createOffer();

@@ -18,12 +18,15 @@ friend and hang out.
     group then the 8. Built from scratch (our own physics and art — the pool
     *mechanic* isn't copyrightable, only Miniclip's specific game is)
   - **Connect 4** — drop discs, talk trash
-  - **Wordle Race** — same word, first to crack it wins (you see their progress as colors only)
+  - **Wordle Race** — same word, first to crack it wins (you see their progress
+    as colors only); a shared 60-second clock caps the round and guesses are
+    validated against a real dictionary
+  - **Hangman** — co-op: team up against the stickman, guessing letters in a
+    shared word across categories before he's fully drawn
 - 💬 **Text chat** alongside the call
 - ⏱️ **Fast turn timer** — 10 seconds to move (15 for a pool shot) or a random
   legal move is played for you, so rounds never drag
 - 🏆 **Per-match scoreboard**, instant replay / new game / skip from the result screen
-- 🎙️ Mic / camera toggles
 
 ## Run it
 
