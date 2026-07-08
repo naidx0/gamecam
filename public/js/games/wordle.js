@@ -1,8 +1,12 @@
 // Wordle Race: both players race to guess the SAME word. First correct guess
-// wins. You see your opponent's progress as a colors-only mini board.
+// wins. You see your opponent's progress as a colors-only mini board. A shared
+// 60-second clock caps the game: at 0:00 whoever has the most greens in a
+// single row wins (tie = draw).
 import { WORDS } from './words.js';
+import { DICTIONARY } from './dictionary.js';
 
 const KB_ROWS = ['qwertyuiop', 'asdfghjkl', '⏎zxcvbnm⌫'];
+const GAME_MS = 60000;
 
 export function create(container, ctx) {
   const word = WORDS[ctx.seed % WORDS.length];
@@ -11,11 +15,60 @@ export function create(container, ctx) {
   let current = '';
   let iAmOut = false;
   let theyAreOut = false;
+  let timeExpired = false;
+  let myBestGreens = 0;   // most green tiles I've had in any single row
+  let theirBestGreens = 0; // same, for the opponent (from received colors)
 
   ctx.setTurn(null); // no turns — it's a race
 
   const wrap = document.createElement('div');
   wrap.className = 'wordle-wrap';
+
+  // --- shared 60s clock ----------------------------------------------------
+  const clockEl = document.createElement('div');
+  clockEl.className = 'wordle-clock';
+  // appended to `wrap` after the two sides (below) so :nth-child selectors on
+  // .wordle-side stay stable; CSS `order:-1` renders it visually on top.
+  const startAt = Date.now();
+  let clockInt = setInterval(tick, 200);
+  function fmt(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+  function tick() {
+    if (over) { stopClock(); return; }
+    const remain = Math.max(0, GAME_MS - (Date.now() - startAt));
+    const secs = Math.ceil(remain / 1000);
+    clockEl.textContent = fmt(secs);
+    clockEl.classList.toggle('urgent', secs <= 10);
+    if (remain <= 0) { stopClock(); onTimeUp(); }
+  }
+  function stopClock() {
+    if (clockInt) { clearInterval(clockInt); clockInt = null; }
+  }
+  tick(); // paint 1:00 immediately
+
+  // Clock hit 0:00 on this client: lock input, then resolve by greens.
+  function onTimeUp() {
+    if (over || timeExpired) return;
+    timeExpired = true;
+    iAmOut = true; // lock further input
+    if (!over) status.textContent = "Time's up!";
+    // The first player is authoritative: after a short grace to let any
+    // in-flight moves land, it broadcasts both green counts and both clients
+    // finish consistently. The second player just waits for that message.
+    if (ctx.first) setTimeout(resolveAsFirst, 600);
+  }
+  function resolveAsFirst() {
+    if (over) return;
+    ctx.sendMove({ timeUp: { mine: myBestGreens, theirs: theirBestGreens } });
+    finishByGreens(myBestGreens, theirBestGreens);
+  }
+  function finishByGreens(mine, theirs) {
+    if (over) return;
+    over = true;
+    stopClock();
+    if (mine > theirs) ctx.finish('win');
+    else if (mine < theirs) ctx.finish('lose');
+    else ctx.finish('draw');
+  }
 
   // --- my side -------------------------------------------------------------
   const mySide = document.createElement('div');
@@ -59,6 +112,7 @@ export function create(container, ctx) {
 
   wrap.appendChild(mySide);
   wrap.appendChild(theirSide);
+  wrap.appendChild(clockEl);
   container.appendChild(wrap);
 
   function onKeydown(e) {
@@ -132,8 +186,14 @@ export function create(container, ctx) {
       flashStatus('Need 5 letters!');
       return;
     }
+    if (!DICTIONARY.has(current)) {
+      flashStatus('Not a word');
+      return;
+    }
     const guess = current;
     const colors = score(guess);
+    const greens = colors.filter((c) => c === 'g').length;
+    if (greens > myBestGreens) myBestGreens = greens;
     for (let c = 0; c < 5; c++) {
       const t = myBoard.tiles[row][c];
       t.textContent = guess[c];
@@ -185,13 +245,22 @@ export function create(container, ctx) {
   return {
     onMove(data) {
       if (over) return;
+      // Authoritative time-up resolution from the first player. Their message
+      // is from THEIR perspective, so swap for us: my greens = their `theirs`.
+      if (data.timeUp) {
+        finishByGreens(Number(data.timeUp.theirs) || 0, Number(data.timeUp.mine) || 0);
+        return;
+      }
       const r = Number(data.row) - 1;
       if (Number.isInteger(r) && r >= 0 && r < 6 && Array.isArray(data.colors)) {
+        let greens = 0;
         data.colors.slice(0, 5).forEach((col, c) => {
           if (col === 'g' || col === 'y' || col === 'b') {
             theirBoard.tiles[r][c].classList.add(col);
           }
+          if (col === 'g') greens++;
         });
+        if (greens > theirBestGreens) theirBestGreens = greens;
         theirStatus.textContent = `${r + 1} / 6 guesses`;
       }
       if (data.won) {
@@ -207,6 +276,7 @@ export function create(container, ctx) {
       }
     },
     destroy() {
+      stopClock();
       document.removeEventListener('keydown', onKeydown);
       wrap.remove();
     },

@@ -290,6 +290,14 @@ input { font: inherit; }
 .wordle-key.y { background: #b5a04c; border-color: #b5a04c; color: #fff; }
 .wordle-key.b { background: #232326; border-color: #232326; color: #66666c; }
 .wordle-status { font-size: 0.82rem; color: var(--text-dim); font-weight: 600; min-height: 1.2em; }
+.wordle-clock {
+  flex-basis: 100%; text-align: center; order: -1;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums; color: var(--text);
+  background: var(--glass-heavy); border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 0; margin-bottom: 4px;
+}
+.wordle-clock.urgent { color: #fff; background: var(--bad, #c0453a); border-color: var(--bad, #c0453a); }
 
 /* ---- chat ---- */
 .chat-col { display: flex; flex-direction: column; min-height: 0; border-radius: var(--radius); overflow: hidden; }
