@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test:e2e": "node test/e2e.js"
   },
   "engines": {
     "node": ">=18"
@@ -15,5 +16,8 @@
   "dependencies": {
     "express": "^4.19.2",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   }
 }

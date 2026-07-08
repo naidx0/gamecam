@@ -19,6 +19,7 @@
         <span class="home-game-chip">8-Ball Pool</span>
         <span class="home-game-chip">Connect 4</span>
         <span class="home-game-chip">Wordle Race</span>
+        <span class="home-game-chip">Hangman</span>
       </div>
       <button id="btn-start" class="btn btn-primary btn-big">Start matching</button>
       <button id="btn-friend" class="btn btn-ghost btn-big">Play with a friend</button>
@@ -67,8 +68,6 @@
           <div class="video-label">You</div>
         </div>
         <div class="controls">
-          <button id="btn-mic" class="ctrl-btn" title="Mute / unmute mic">Mic</button>
-          <button id="btn-cam" class="ctrl-btn" title="Camera on / off">Cam</button>
           <button id="btn-gamebox" class="ctrl-btn" title="Choose a game">Games</button>
           <button id="btn-skip" class="ctrl-btn ctrl-skip" title="Next stranger">Skip</button>
         </div>
@@ -102,7 +101,11 @@
         <div id="stage-game" class="stage-panel stage-game" hidden>
           <div class="game-header">
             <h2 id="game-title"></h2>
-            <div id="game-timer" class="game-timer" hidden></div>
+            <div id="game-banner" class="game-banner" hidden></div>
+            <div id="game-timer" class="game-timer" hidden>
+              <div id="game-timer-fill" class="game-timer-fill"></div>
+              <span id="game-timer-num" class="game-timer-num"></span>
+            </div>
             <div id="game-turn" class="game-turn"></div>
             <button id="btn-quit-game" class="btn btn-tiny btn-ghost">Quit</button>
           </div>

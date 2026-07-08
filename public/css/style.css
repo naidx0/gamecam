@@ -162,7 +162,6 @@ input { font: inherit; }
 }
 .ctrl-btn:hover { background: var(--fill-hover); }
 .ctrl-btn:active { transform: scale(0.96); }
-.ctrl-btn.off { color: var(--bad); text-decoration: line-through; }
 .ctrl-skip { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
 .ctrl-skip:hover { background: #dcdce0; }
 
@@ -205,8 +204,24 @@ input { font: inherit; }
   background: var(--fill); border: 1px solid var(--line); color: var(--text-dim);
 }
 .game-turn.mine { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
-.game-timer { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
-.game-timer.low { color: var(--bad); border-color: var(--bad); }
+.game-timer {
+  position: relative; overflow: hidden;
+  min-width: 64px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.game-timer-fill {
+  position: absolute; inset: 0; width: 100%;
+  background: var(--ink); transition: width 0.1s linear;
+}
+.game-timer-num { position: relative; color: #fff; mix-blend-mode: difference; }
+.game-timer.low { border-color: var(--bad); }
+.game-timer.low .game-timer-fill { background: var(--bad); }
+.game-timer.low .game-timer-num { mix-blend-mode: normal; color: var(--bad); }
+.game-banner {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #fff; white-space: nowrap;
+}
+.game-banner .banner-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 #game-area { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; }
 
 .result-text { font-size: 1.6rem; }

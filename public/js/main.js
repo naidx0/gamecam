@@ -24,8 +24,6 @@ const localVideo = $('local-video');
 const remoteVideo = $('remote-video');
 const remoteOverlay = $('remote-overlay');
 const remoteOverlayText = $('remote-overlay-text');
-const btnMic = $('btn-mic');
-const btnCam = $('btn-cam');
 const btnGamebox = $('btn-gamebox');
 const btnSkip = $('btn-skip');
 
@@ -48,6 +46,9 @@ const btnCancelInvite = $('btn-cancel-invite');
 const gameTitle = $('game-title');
 const gameTurn = $('game-turn');
 const gameTimer = $('game-timer');
+const gameTimerFill = $('game-timer-fill');
+const gameTimerNum = $('game-timer-num');
+const gameBanner = $('game-banner');
 const btnQuitGame = $('btn-quit-game');
 const gameArea = $('game-area');
 const resultText = $('result-text');
@@ -69,8 +70,6 @@ const toast = $('toast');
 // ---- state -----------------------------------------------------------------
 let paired = false;
 let friendMode = false;
-let micOn = true;
-let camOn = true;
 let score = { me: 0, them: 0 };
 let activeGame = null; // { id, instance }
 let lastGameId = null; // for rematch
@@ -129,19 +128,40 @@ function clearTurnTimer() {
 
 function startTurnTimer(seconds = TURN_SECONDS) {
   clearTurnTimer();
-  turnDeadline = Date.now() + seconds * 1000;
+  const totalMs = seconds * 1000;
+  turnDeadline = Date.now() + totalMs;
   gameTimer.hidden = false;
   const tick = () => {
-    const left = Math.max(0, Math.ceil((turnDeadline - Date.now()) / 1000));
-    gameTimer.textContent = `${left}s`;
+    const leftMs = Math.max(0, turnDeadline - Date.now());
+    const left = Math.ceil(leftMs / 1000);
+    gameTimerNum.textContent = `${left}s`;
+    gameTimerFill.style.width = `${(leftMs / totalMs) * 100}%`;
     gameTimer.classList.toggle('low', left <= 3);
-    if (left <= 0) {
+    if (leftMs <= 0) {
       clearTurnTimer();
       activeGame?.instance.randomMove?.();
     }
   };
   tick();
-  turnInterval = setInterval(tick, 250);
+  turnInterval = setInterval(tick, 100);
+}
+
+// bold uppercase strip in the game header, e.g. "YOU ARE SOLIDS" with a dot
+function setGameBanner(text, dotColor) {
+  if (!text) {
+    gameBanner.hidden = true;
+    gameBanner.textContent = '';
+    return;
+  }
+  gameBanner.textContent = '';
+  if (dotColor) {
+    const dot = document.createElement('span');
+    dot.className = 'banner-dot';
+    dot.style.background = dotColor;
+    gameBanner.appendChild(dot);
+  }
+  gameBanner.appendChild(document.createTextNode(text));
+  gameBanner.hidden = false;
 }
 
 function destroyGame() {
@@ -150,6 +170,7 @@ function destroyGame() {
     activeGame = null;
   }
   clearTurnTimer();
+  setGameBanner(null);
   gameArea.textContent = '';
   gameTurn.hidden = true;
 }
@@ -263,18 +284,6 @@ function enterWaitingRoom() {
 }
 
 // ---- controls ----------------------------------------------------------------
-btnMic.addEventListener('click', () => {
-  micOn = !micOn;
-  rtc.setMicEnabled(micOn);
-  btnMic.classList.toggle('off', !micOn);
-});
-
-btnCam.addEventListener('click', () => {
-  camOn = !camOn;
-  rtc.setCamEnabled(camOn);
-  btnCam.classList.toggle('off', !camOn);
-});
-
 function skipToNext() {
   if (paired) socket.send({ t: 'skip' });
   friendMode = false;
@@ -283,6 +292,21 @@ function skipToNext() {
 
 btnSkip.addEventListener('click', skipToNext);
 btnResultSkip.addEventListener('click', skipToNext);
+
+// video never connected (or dropped for good) — rtc.js gave up on this peer
+rtc.setConnectionFailedHandler(() => {
+  if (!paired) return;
+  if (friendMode) {
+    rtc.closePeer();
+    remoteVideo.srcObject = null;
+    remoteOverlay.hidden = false;
+    remoteOverlayText.textContent = "Video couldn't connect. Both of you: refresh and try the link again.";
+    setStatus("Video couldn't connect", false);
+  } else {
+    showToast("Video couldn't connect — finding someone new");
+    skipToNext();
+  }
+});
 
 // ---- gamebox ----------------------------------------------------------------
 for (const game of Object.values(GAMES)) {
@@ -373,6 +397,7 @@ function launchGame(gameId, seed, first) {
       if (mine) startTurnTimer(game.turnSeconds ?? TURN_SECONDS);
       else clearTurnTimer();
     },
+    setBanner: (text, dotColor) => setGameBanner(text, dotColor),
     finish: (result) => finishGame(result),
   };
   activeGame = { id: gameId, instance: game.create(gameArea, ctx) };
@@ -392,6 +417,8 @@ function finishGame(result) {
     if (!paired) return;
     if (result === 'win') resultText.textContent = 'You won';
     else if (result === 'lose') resultText.textContent = 'You lost';
+    else if (result === 'coop_win') resultText.textContent = 'You beat it together';
+    else if (result === 'coop_loss') resultText.textContent = 'It got you both';
     else resultText.textContent = 'Draw';
     showStage('result');
   }, 1400);
